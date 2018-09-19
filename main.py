@@ -1,7 +1,9 @@
 import json
 import time
+
 from InstagramAPI import InstagramAPI
-from . import key
+
+import key
 
 
 class API:
@@ -12,6 +14,7 @@ class API:
 
     def login(self):
         self._api.login()
+        return self._api.LastJson
 
     def get_feed(self, filtered=True):
         feed = []
@@ -21,7 +24,7 @@ class API:
                 feed.append(item)
         return feed
 
-    def get_user_post(self, limit=None, timeout=1):
+    def get_user_post(self, limit=None, timeout=1, sort=False):
         posts = []
         has_more_posts = True
         max_id = ""
@@ -33,6 +36,7 @@ class API:
             if limit and len(posts) >= limit:
                 break
             time.sleep(timeout)
+        posts = sorted(posts, key=lambda k: k['like_count'], reverse=True) if sort else posts
         return posts[:limit] if limit else posts
 
     @staticmethod
