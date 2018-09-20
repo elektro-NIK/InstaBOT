@@ -39,6 +39,22 @@ class API:
         posts = sorted(posts, key=lambda k: k['like_count'], reverse=True) if sort else posts
         return posts[:limit] if limit else posts
 
+    def get_last_activity(self):
+        self._api.getRecentActivity()
+        return self._api.LastJson
+
+    def get_self_info(self):
+        self._api.getSelfUsernameInfo()
+        return self._api.LastJson
+
+    def get_self_users_following(self):
+        self._api.getSelfUsersFollowing()
+        return self._api.LastJson
+
+    def get_user_following(self, id):
+        self._api.getUserFollowings(id)
+        return self._api.LastJson
+
     @staticmethod
     def pretty_print(json_dict):
         print(json.dumps(json_dict, indent=2))
