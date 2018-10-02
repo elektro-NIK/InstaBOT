@@ -25,9 +25,11 @@ class DB:
         if self._conn:
             self._conn.close()
 
-    def create_table(self, name, field_names, field_types):
-        fields = ', '.join([f'{fname} {ftype}' for fname, ftype in zip(field_names, field_types)])
-        self._curs.execute("CREATE TABLE {} (:fields)".format(self._scrub(name)), {'fields': fields})
+    def create_table(self, name, fields_tuple):
+        fields = ', '.join(
+            [f'"{fname}" {ftype} {fmody}' for fname, ftype, fmody in fields_tuple]
+        )
+        self._curs.execute("CREATE TABLE IF NOT EXISTS {} ({})".format(self._scrub(name), fields))
 
     def insert_data(self, table, data):
         if self._is_plain_list(data):
