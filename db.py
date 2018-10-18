@@ -31,16 +31,28 @@ class DB:
         )
         self._curs.execute("CREATE TABLE IF NOT EXISTS {} ({})".format(self._scrub(name), fields))
 
-    def insert_data(self, table, data):
+    def insert_data(self, table, fields, data):
         if self._is_plain_list(data):
             self._curs.execute(
-                "INSERT INTO {} VALUES ({})".format(self._scrub(table), ', '.join("'{}'".format(i) for i in data))
+                "INSERT OR IGNORE INTO {} ({}) VALUES ({})".format(
+                    self._scrub(table),
+                    ', '.join([self._scrub(i) for i in fields]),
+                    ', '.join("'{}'".format(i) for i in data)),
             )
+            self._conn.commit()
+            self._curs.execute(
+                "SELECT id FROM {} WHERE {} = {}".format(self._scrub(table), self._scrub(fields[0]), data[0])
+            )
+            return self._curs.fetchall()[0]
         else:
             self._curs.executemany(
-                "INSERT INTO {} VALUES ({})".format(self._scrub(table), ','.join(['?']*len(data[0]))), data
+                "INSERT INTO {} ({}) VALUES ({})".format(
+                    self._scrub(table),
+                    ', '.join([self._scrub(i) for i in fields]),
+                    ','.join(['?']*len(data[0]))), data
             )
-        self._conn.commit()
+            self._conn.commit()
+            return None
 
     def update_data(self, table, set_field, set_data, where_field, where_data):
         self._curs.execute(
@@ -69,4 +81,4 @@ class DB:
 
     @staticmethod
     def _scrub(string):
-        return ''.join(c for c in string if c.isalnum())
+        return ''.join(c for c in string if c.isalnum() or c in ('_',))
