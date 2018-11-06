@@ -25,11 +25,15 @@ class DB:
         if self._conn:
             self._conn.close()
 
-    def create_table(self, name, fields_tuple):
+    def create_table(self, name, fields_tuple, ref_list=[]):
         fields = ', '.join(
-            [f'"{fname}" {ftype} {fmody}' for fname, ftype, fmody in fields_tuple]
+            [f'"{fname}" {ftype} {fmody}' for fname, ftype, fmody in fields_tuple] + ref_list
         )
         self._curs.execute("CREATE TABLE IF NOT EXISTS {} ({})".format(self._scrub(name), fields))
+
+    def get_data(self, sql):
+        self._curs.execute(sql)
+        return self._curs.fetchall()
 
     def insert_data(self, table, fields, data):
         if self._is_plain_list(data):
@@ -41,9 +45,9 @@ class DB:
             )
             self._conn.commit()
             self._curs.execute(
-                "SELECT id FROM {} WHERE {} = {}".format(self._scrub(table), self._scrub(fields[0]), data[0])
+                "SELECT id FROM {} WHERE {} = '{}'".format(self._scrub(table), self._scrub(fields[0]), data[0])
             )
-            return self._curs.fetchall()[0]
+            return self._curs.fetchall()[0][0]
         else:
             self._curs.executemany(
                 "INSERT INTO {} ({}) VALUES ({})".format(
