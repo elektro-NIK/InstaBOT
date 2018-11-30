@@ -1,5 +1,6 @@
 import json
 import pickle
+import sys
 from datetime import datetime
 
 from db import DB
@@ -65,6 +66,7 @@ def load_from_file(filename):
 
 
 def log(x):
+    print(f'{datetime.now()}: \t {x}')
     with open('log.txt', 'a') as f:
         f.write(f'{datetime.now()}: \t {x}')
 
@@ -106,11 +108,9 @@ def simplify_history(hist):
             try:
                 s['media'] = story['args']['media'][0]['image']
             except KeyError:
-                pass
+                continue
             res.append(s)
-        elif story_type in types_ignoring:
-            pass
-        else:
+        elif story_type not in types_ignoring:
             log(story)
     return res
 
@@ -118,30 +118,37 @@ def simplify_history(hist):
 def save_history2db(database):
     max_ts = database.get_data('SELECT MAX(timestamp) FROM History')[0][0] or 0.0
     counter = 0
-    for i in history:
-        if max_ts < i['timestamp']:
+    for i in range(len(history)):
+        if max_ts < history[i]['timestamp']:
             text = database.insert_data(
                 'Text',
                 ('msg', 'link_start', 'link_end'),
-                (i['text']['msg'], i['text']['link_start'], i['text']['link_end'])
+                (history[i]['text']['msg'], history[i]['text']['link_start'], history[i]['text']['link_end'])
             )
-            hist_type = database.insert_data('Type', ('text',), (i['type'],))
+            hist_type = database.insert_data('Type', ('text',), (history[i]['type'],))
             user = database.insert_data(
                 'User',
                 ('user_id', 'username', 'userpic'),
-                (i['profile']['id'], i['profile']['name'], i['profile']['image'])
+                (history[i]['profile']['id'], history[i]['profile']['name'], history[i]['profile']['image'])
             )
-            link = database.insert_data('Link', ('link_id', 'type'), (i['link']['id'], i['link']['type']))
+            link = database.insert_data(
+                'Link',
+                ('link_id', 'type'),
+                (history[i]['link']['id'], history[i]['link']['type'])
+            )
             try:
-                media = database.insert_data('Media', ('url',), (i['media'],))
+                media = database.insert_data('Media', ('url',), (history[i]['media'],))
             except KeyError:
                 media = None
             database.insert_data(
                 'History',
                 ('timestamp', 'text', 'type', 'user', 'link', 'media'),
-                (i['timestamp'], text, hist_type, user, link, media)
+                (history[i]['timestamp'], text, hist_type, user, link, media)
             )
             counter += 1
+        sys.stdout.write(f'\r{"="*i}[{i+1}/{len(history)}]')
+        sys.stdout.flush()
+    print('')
     return counter
 
 
