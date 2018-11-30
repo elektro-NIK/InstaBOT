@@ -1,5 +1,6 @@
 import json
 import pickle
+from datetime import datetime
 
 from db import DB
 from key import login, password
@@ -63,12 +64,18 @@ def load_from_file(filename):
     return res
 
 
-def log(x):     # Fixme!
-    pass
+def log(x):
+    with open('log.txt', 'a') as f:
+        f.write(f'{datetime.now()}: \t {x}')
 
 
 def simplify_history(history):
-    types = {12: 'comment', 60: 'like', 101: 'following'}
+    types = {
+        12: 'comment',
+        60: 'like',
+        66: 'mention',
+        101: 'following'
+    }
     types_ignoring = {43: 'facebook friend'}
     res = []
     for story in history:
@@ -108,19 +115,11 @@ def simplify_history(history):
     return res
 
 
-if __name__ == '__main__':
-    insta = API(login=login, password=password)
-    last_activity = insta.login()
-    history = simplify_history(last_activity['new_stories'] + last_activity['old_stories'])
-    db = DB('instaBot.sqlite')
-    db.connect()
-    create_tables(db)
+def save_history2DB(db):
     max_ts = db.get_data('SELECT MAX(timestamp) FROM History')[0][0] or 0.0
     counter = 0
     for i in history:
-        if max_ts >= i['timestamp']:
-            pass
-        else:
+        if max_ts < i['timestamp']:
             text = db.insert_data(
                 'Text',
                 ('msg', 'link_start', 'link_end'),
@@ -143,6 +142,17 @@ if __name__ == '__main__':
                 (i['timestamp'], text, type, user, link, media)
             )
             counter += 1
-    print(f'Added {counter} lines to DB.')
+    return counter
+
+
+if __name__ == '__main__':
+    insta = API(login=login, password=password)
+    last_activity = insta.login()
+    history = simplify_history(last_activity['new_stories'] + last_activity['old_stories'])
+    db = DB('instaBot.sqlite')
+    db.connect()
+    create_tables(db)
+    count = save_history2DB(db)
+    print(f'Added {count} lines to DB.')
     db.close_connection()
     insta.logout()
