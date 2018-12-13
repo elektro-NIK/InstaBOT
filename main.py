@@ -116,7 +116,7 @@ def simplify_history(hist):
 
 
 def save_history2db(database):
-    max_ts = database.get_data('SELECT MAX(timestamp) FROM History')[0][0] or 0.0
+    max_ts = database._sql('SELECT MAX(timestamp) FROM History')[0][0] or 0.0
     counter = 0
     for i in range(len(history)):
         if max_ts < history[i]['timestamp']:

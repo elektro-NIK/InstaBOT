@@ -25,14 +25,32 @@ class DB:
         if self._conn:
             self._conn.close()
 
+    def _sql(self, sql):
+        self._curs.execute(sql)
+        return self._curs.fetchall()
+
     def create_table(self, name, fields_tuple, ref_list=[]):
         fields = ', '.join(
             [f'"{fname}" {ftype} {fmody}' for fname, ftype, fmody in fields_tuple] + ref_list
         )
         self._curs.execute("CREATE TABLE IF NOT EXISTS {} ({})".format(self._scrub(name), fields))
 
-    def get_data(self, sql):
-        self._curs.execute(sql)
+    def get_data(self, table, fields, where_cond=None):
+        if where_cond:
+            self._curs.execute(
+                "SELECT {} FROM {} WHERE {}".format(
+                    ', '.join(fields),
+                    self._scrub(table),
+                    where_cond
+                )
+            )
+        else:
+            self._curs.execute(
+                "SELECT {} FROM {}".format(
+                    ', '.join(fields),
+                    self._scrub(table)
+                )
+            )
         return self._curs.fetchall()
 
     def insert_data(self, table, fields, data):
