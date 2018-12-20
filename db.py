@@ -78,10 +78,10 @@ class DB:
 
     def update_data(self, table, set_field, set_data, where_field, where_data):
         self._curs.execute(
-            "UPDATE {} SET {} = :set_data' WHERE {} = :where_data".format(
+            "UPDATE {} SET {} = :set_data WHERE {} = :where_data".format(
                 self._scrub(table), self._scrub(set_field), self._scrub(where_field)
             ),
-            {'set_field': set_data, 'where_field': where_data}
+            {'set_data': set_data, 'where_data': where_data}
         )
         self._conn.commit()
 
@@ -90,7 +90,7 @@ class DB:
             "DELETE FROM {} WHERE {} = :where_data".format(
                 self._scrub(table), self._scrub(where_field)
             ),
-            {'where_field': where_data}
+            {'where_data': where_data}
         )
         self._conn.commit()
 

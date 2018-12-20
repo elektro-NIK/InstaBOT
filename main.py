@@ -108,18 +108,19 @@ def simplify_history(hist):
             try:
                 s['media'] = story['args']['media'][0]['image']
             except KeyError:
-                continue
+                pass
             res.append(s)
         elif story_type not in types_ignoring:
             log(story)
     return res
 
 
-def save_history2db(database):
+def save_history2db(history, database):
     max_ts = database._sql('SELECT MAX(timestamp) FROM History')[0][0] or 0.0
     counter = 0
     for i in range(len(history)):
         if max_ts < history[i]['timestamp']:
+            # add new history
             text = database.insert_data(
                 'Text',
                 ('msg', 'link_start', 'link_end'),
@@ -145,6 +146,15 @@ def save_history2db(database):
                 ('timestamp', 'text', 'type', 'user', 'link', 'media'),
                 (history[i]['timestamp'], text, hist_type, user, link, media)
             )
+
+            # update userdata
+            user_id = history[i]['profile']['id']
+            user_data = database.get_data('User', ['*'], where_cond=f'user_id={user_id}')[0]
+            if user_data[2] != history[i]['profile']['name']:
+                database.update_data('User', 'username', history[i]['profile']['name'], 'user_id', user_id)
+            if user_data[3] != history[i]['profile']['image']:
+                database.update_data('User', 'userpic', history[i]['profile']['image'], 'user_id', user_id)
+
             counter += 1
         sys.stdout.write(f'\r{"="*i}[{i+1}/{len(history)}]')
         sys.stdout.flush()
@@ -159,7 +169,7 @@ if __name__ == '__main__':
     db = DB('instaBot.sqlite')
     db.connect()
     create_tables(db)
-    count = save_history2db(db)
+    count = save_history2db(history, db)
     print(f'Added {count} lines to DB.')
     db.close_connection()
     insta.logout()
