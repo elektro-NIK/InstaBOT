@@ -74,6 +74,7 @@ def log(x):
 def simplify_history(hist):
     types = {
         12: 'comment',
+        13: 'like comment',
         60: 'like',
         66: 'mention',
         101: 'following'
