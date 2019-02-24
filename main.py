@@ -77,9 +77,12 @@ def simplify_history(hist):
         13: 'like comment',
         60: 'like',
         66: 'mention',
-        101: 'following'
+        101: 'following',
     }
-    types_ignoring = {43: 'facebook friend'}
+    types_ignoring = {
+        43: 'facebook friend',
+        127: 'facebook friend add instagram',
+    }
     res = []
     for story in hist:
         try:

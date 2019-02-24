@@ -59,11 +59,11 @@ class DB:
                 "INSERT OR IGNORE INTO {} ({}) VALUES ({})".format(
                     self._scrub(table),
                     ', '.join([self._scrub(i) for i in fields]),
-                    ', '.join("'{}'".format(i) for i in data)),
+                    ', '.join("'{}'".format(self._scrub_data(i)) for i in data)),
             )
             self._conn.commit()
             self._curs.execute(
-                "SELECT id FROM {} WHERE {} = '{}'".format(self._scrub(table), self._scrub(fields[0]), data[0])
+                "SELECT id FROM {} WHERE {} = '{}'".format(self._scrub(table), self._scrub(fields[0]), self._scrub_data(data[0]))
             )
             return self._curs.fetchall()[0][0]
         else:
@@ -103,4 +103,13 @@ class DB:
 
     @staticmethod
     def _scrub(string):
+        if isinstance(string, (int, float)) or string is None:
+            return string
         return ''.join(c for c in string if c.isalnum() or c in ('_',))
+
+    @staticmethod
+    def _scrub_data(string):
+        if isinstance(string, (int, float)) or string is None:
+            return string
+        return ''.join(c for c in string if c.isalnum() or c in ('_', ' '))
+
