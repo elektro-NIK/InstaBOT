@@ -121,7 +121,7 @@ def simplify_history(hist):
 
 def save_history2db(history, database):
     max_ts = database._sql('SELECT MAX(timestamp) FROM History')[0][0] or 0.0
-    counter = 0
+    main_counter, comment_counter, mention_counter, follow_counter = 0, 0, 0, 0
     for i in range(len(history)):
         if max_ts < history[i]['timestamp']:
             # add new history
@@ -159,11 +159,17 @@ def save_history2db(history, database):
             if user_data[3] != history[i]['profile']['image']:
                 database.update_data('User', 'userpic', history[i]['profile']['image'], 'user_id', user_id)
 
-            counter += 1
+            if history[i]['type'] == 'comment':
+                comment_counter += 1
+            if history[i]['type'] == 'mention':
+                mention_counter += 1
+            if history[i]['type'] == 'following':
+                follow_counter += 1
+            main_counter += 1
         sys.stdout.write(f'\r{"="*i}[{i+1}/{len(history)}]')
         sys.stdout.flush()
     print('')
-    return counter
+    return main_counter, comment_counter, mention_counter, follow_counter
 
 
 if __name__ == '__main__':
@@ -173,7 +179,10 @@ if __name__ == '__main__':
     db = DB('instaBot.sqlite')
     db.connect()
     create_tables(db)
-    count = save_history2db(history, db)
-    print(f'Added {count} lines to DB.')
+    count, comment, mention, follow = save_history2db(history, db)
+    print(f'Added {count} lines to DB\n'
+          f'{follow} new followers\n'
+          f'{comment} new comments\n'
+          f'{mention} new mentions\n')
     db.close_connection()
     insta.logout()
