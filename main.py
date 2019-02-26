@@ -166,7 +166,8 @@ def save_history2db(history, database):
             if history[i]['type'] == 'following':
                 follow_counter += 1
             main_counter += 1
-        sys.stdout.write(f'\r{"="*i}[{i+1}/{len(history)}]')
+        progress = int(100*(i+1)/len(history))
+        sys.stdout.write(f'\r[{"="*progress}{" "*(100-progress)}] {progress}%')
         sys.stdout.flush()
     print('')
     return main_counter, comment_counter, mention_counter, follow_counter
