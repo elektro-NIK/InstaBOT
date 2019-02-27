@@ -78,6 +78,7 @@ def simplify_history(hist):
         60: 'like',
         66: 'mention',
         101: 'following',
+        102: 'tagging you',
     }
     types_ignoring = {
         43: 'facebook friend',
