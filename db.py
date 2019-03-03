@@ -111,5 +111,5 @@ class DB:
     def _scrub_data(string):
         if isinstance(string, (int, float)) or string is None:
             return string
-        return ''.join(c for c in string if c.isalnum() or c in ('_', ' '))
+        return ''.join(c for c in string if c.isalnum() or c in ('_', ' ', '.'))
 
