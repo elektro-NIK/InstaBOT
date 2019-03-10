@@ -1,7 +1,8 @@
 import json
+import os
 import pickle
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from db import DB
 from key import login, password
@@ -68,7 +69,7 @@ def load_from_file(filename):
 def log(x):
     print(f'{datetime.now()}: \t {x}')
     with open('log.txt', 'a') as f:
-        f.write(f'{datetime.now()}: \t {x}')
+        f.write(f'{datetime.now()}: \t {x} \n')
 
 
 def simplify_history(hist):
@@ -89,7 +90,7 @@ def simplify_history(hist):
         try:
             story_type = story['story_type']
         except KeyError:
-            log(story)
+            log(pretty_print_json(story))
             continue
         if story_type in types:
             s = {
@@ -116,7 +117,7 @@ def simplify_history(hist):
                 pass
             res.append(s)
         elif story_type not in types_ignoring:
-            log(story)
+            log(pretty_print_json(story))
     return res
 
 
@@ -178,13 +179,43 @@ if __name__ == '__main__':
     insta = API(login=login, password=password)
     last_activity = insta.login()
     history = simplify_history(last_activity['new_stories'] + last_activity['old_stories'])
+
     db = DB('instaBot.sqlite')
     db.connect()
     create_tables(db)
+
     count, comment, mention, follow = save_history2db(history, db)
     print(f'Added {count} lines to DB\n'
           f'{follow} new followers\n'
           f'{comment} new comments\n'
           f'{mention} new mentions\n')
+
+    if datetime.now() - insta.time_of_last_post() > timedelta(days=3):
+        print('Posting new photo...')
+
+        path_img, _, raw_files = [i for i in os.walk('photos')][0]
+        path_caption, _, captions = [i for i in os.walk('captions')][0]
+        raw_files = [file for file in raw_files if not file[0] == '.']
+        captions = [file for file in captions if not file[0] == '.']
+        raw_files.sort()
+        captions.sort()
+
+        files = [file.split('.')[0].split('_') for file in raw_files]
+        basename = files[0][0]
+
+        log(f'Posted photo: {basename}.')
+
+        post = [os.path.join(path_img, file) for file in raw_files if basename in file]
+        text = os.path.join(path_caption, basename + '.txt')
+        with open(text, 'r') as f:
+            caption = f.read()
+
+        res = insta.post_photo(post[0], caption) if len(post) == 1 else insta.post_album(post, caption)
+
+        for file in post:
+            os.remove(file)
+
+        print(f'Success!'
+              f'Message: {res}')
     db.close_connection()
     insta.logout()

@@ -1,5 +1,7 @@
 from InstagramAPI import InstagramAPI, time
 
+from statistic import timestamp2datetime
+
 
 class API:
     def __init__(self, login='', password=''):
@@ -53,3 +55,14 @@ class API:
     def get_user_following(self, user_id):
         self._api.getUserFollowings(user_id)
         return self._api.LastJson
+
+    def time_of_last_post(self):
+        self._api.getSelfUserFeed()
+        return timestamp2datetime(self._api.LastJson['items'][0]['taken_at'])
+
+    def post_photo(self, path, caption=''):
+        return self._api.uploadPhoto(path, caption)
+
+    def post_album(self, paths, caption=''):
+        media = [{'type': 'photo', 'file': i} for i in paths]
+        return self._api.uploadAlbum(media, caption)
