@@ -8,6 +8,8 @@ from db import DB
 from key import login, password
 from api import API
 
+POST_PERIOD = 72
+
 
 def pretty_print_json(json_dict):
     print(json.dumps(json_dict, indent=2))
@@ -190,7 +192,7 @@ if __name__ == '__main__':
           f'{comment} new comments\n'
           f'{mention} new mentions\n')
 
-    if datetime.now() - insta.time_of_last_post() > timedelta(days=3):
+    if datetime.now() - insta.time_of_last_post() > timedelta(hours=POST_PERIOD):
         print('Posting new photo...')
 
         path_img, _, raw_files = [i for i in os.walk('photos')][0]
